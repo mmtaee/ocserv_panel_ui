@@ -1,7 +1,8 @@
 <script setup>
 import { useLocale } from 'vuetify/framework'
-import CenterLayout from '@/components/CenterLayout.vue'
-import { ref } from 'vue'
+import CenterLayout from '@/components/layouts/CenterLayout.vue'
+import { reactive, ref, toRaw } from 'vue'
+import { requiredRule } from '@/utils/rules.js'
 
 const emit = defineEmits(['sendResult'])
 const valid = ref(true)
@@ -12,35 +13,34 @@ const props = defineProps({
     type: Object,
     required: true,
   },
+  readOnly: {
+    type: Boolean,
+    default: false,
+  },
 })
 
-const formValues = ref({
+const rules = {
+  required: (v) => requiredRule(v, t),
+}
+
+const formValues = reactive({
   username: null,
   password: null,
 })
 
-function required(v) {
-  return !!v || t('FIELD_IS_REQUIRED')
-}
-
 const sendResult = () => {
-  if (!Boolean(formValues.value.username) || !Boolean(formValues.value.password)) {
+  if (!Boolean(formValues.username) || !Boolean(formValues.password)) {
     valid.value = false
   } else {
     emit('sendResult', {
       valid: valid.value,
-      username: formValues.value.username,
-      password: formValues.value.password,
+      ...toRaw(formValues),
     })
   }
 }
 
-if (props.data?.username !== null) {
-  formValues.value.username = props.data?.username
-}
-
-if (props.data?.password !== null) {
-  formValues.value.password = props.data?.password
+if (props.data) {
+  Object.assign(formValues, structuredClone(props.data))
 }
 </script>
 
@@ -52,9 +52,10 @@ if (props.data?.password !== null) {
           <v-col class="pa-0 ma-0" cols="12" md="6" sm="12">
             <v-text-field
               v-model="formValues.username"
+              :clearable="readOnly"
               :label="t('USERNAME')"
-              :rules="[required]"
-              clearable
+              :readonly="readOnly"
+              :rules="[rules.required]"
               variant="solo-filled"
               @keyup="sendResult"
               @click:clear="sendResult"
@@ -65,9 +66,10 @@ if (props.data?.password !== null) {
           <v-col class="pa-0 ma-0" cols="12" md="6" sm="12">
             <v-text-field
               v-model="formValues.password"
+              :clearable="readOnly"
               :label="t('PASSWORD')"
-              :rules="[required]"
-              clearable
+              :readonly="readOnly"
+              :rules="[rules.required]"
               variant="solo-filled"
               @keyup="sendResult"
               @click:clear="sendResult"

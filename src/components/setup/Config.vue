@@ -1,7 +1,7 @@
 <script setup>
 import { useLocale } from 'vuetify/framework'
-import { ref } from 'vue'
-import CenterLayout from '@/components/CenterLayout.vue'
+import CenterLayout from '@/components/layouts/CenterLayout.vue'
+import { reactive, toRaw } from 'vue'
 
 const { t } = useLocale()
 const emit = defineEmits(['sendResult'])
@@ -13,7 +13,7 @@ const props = defineProps({
   },
 })
 
-const formValues = ref({
+const formValues = reactive({
   googleCaptchaSiteKey: null,
   googleCaptchaSecretKey: null,
 })
@@ -21,17 +21,12 @@ const formValues = ref({
 const sendResult = () => {
   emit('sendResult', {
     valid: true,
-    googleCaptchaSiteKey: formValues.value.googleCaptchaSiteKey,
-    googleCaptchaSecretKey: formValues.value.googleCaptchaSecretKey,
+    ...toRaw(formValues),
   })
 }
 
-if (props.data?.googleCaptchaSiteKey !== null) {
-  formValues.value.googleCaptchaSiteKey = props.data?.googleCaptchaSiteKey
-}
-
-if (props.data?.googleCaptchaSecretKey !== null) {
-  formValues.value.googleCaptchaSecretKey = props.data?.googleCaptchaSecretKey
+if (props.data) {
+  Object.assign(formValues, structuredClone(props.data))
 }
 </script>
 

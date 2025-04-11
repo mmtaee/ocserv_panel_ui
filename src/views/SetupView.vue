@@ -1,32 +1,55 @@
 <script setup>
 import { useLocale } from 'vuetify'
-import { ref } from 'vue'
+import { ref, toRaw } from 'vue'
 import Admin from '@/components/setup/Admin.vue'
-import CenterLayout from '@/components/CenterLayout.vue'
+import CenterLayout from '@/components/layouts/CenterLayout.vue'
 import Config from '@/components/setup/Config.vue'
+import OcservGroup from '@/components/setup/OcservGroup.vue'
+import Finalize from '@/components/setup/Finalize.vue'
 
 const step = ref(1)
 const { t } = useLocale()
 const loading = ref(false)
 const formIsValid = ref(false)
 
+const ocservGroupFields = {
+  rx: null,
+  tx: null,
+  maxSameClient: null,
+  dns1: null,
+  dns2: null,
+  ipv4Network: null,
+  noUDP: null,
+  keepAlive: null,
+  dpd: null,
+  mobileDpd: null,
+  tunnelAllDns: null,
+  restrictUserToRoute: null,
+  statsReportTime: null,
+  mtu: null,
+  idleTimeout: null,
+  mobileIdleTimeout: null,
+  sessionTimeout: null,
+}
+
 const bodyData = ref({
   username: null,
   password: null,
   googleCaptchaSiteKey: null,
   googleCaptchaSecretKey: null,
+  ...toRaw(ocservGroupFields),
 })
 
 const steps = [
   {
     complete: false,
-    title: t('ADMIN_REGISTRY'),
+    title: t('ADMIN_REGISTRY_SETUP'),
     component: Admin,
     data: { username: null, password: null },
   },
   {
     complete: false,
-    title: t('SITE_CONFIG'),
+    title: t('SITE_CONFIG_SETUP'),
     component: Config,
     data: {
       googleCaptchaSiteKey: null,
@@ -35,14 +58,16 @@ const steps = [
   },
   {
     complete: false,
-    title: t('DEFAULT_OCSERV_GROUP'),
-    component: '',
+    title: t('DEFAULT_OCSERV_GROUP_SETUP'),
+    component: OcservGroup,
+    data: ocservGroupFields,
   },
   {
     complete: false,
-    title: t('FINALIZATION_CONFIG'),
-    component: '',
+    title: t('FINALIZATION_SETUP'),
+    component: Finalize,
     loading: false,
+    data: bodyData,
   },
 ]
 
@@ -67,28 +92,19 @@ function prevStep() {
 
 const handleResult = (result) => {
   formIsValid.value = result?.valid
+  delete result.valid
+  Object.assign(steps[step.value - 1].data, result)
 
-  switch (step.value) {
-    case 1:
-      steps[0].data.username = result.username
-      steps[0].data.password = result.password
-      bodyData.username = result.username
-      bodyData.password = result.password
-      break
-    case 2:
-      steps[1].data.googleCaptchaSiteKey = result.googleCaptchaSiteKey
-      steps[1].data.googleCaptchaSecretKey = result.googleCaptchaSecretKey
-      bodyData.googleCaptchaSiteKey = result.googleCaptchaSiteKey
-      bodyData.googleCaptchaSecretKey = result.googleCaptchaSecretKey
-      break
-    default:
+  bodyData.value = {
+    ...bodyData.value,
+    ...result,
   }
 }
 </script>
 
 <template>
   <CenterLayout>
-    <v-card color="secondary">
+    <v-card color="secondary" width="70%">
       <v-card-title class="pa-3 ma-3 text-white">
         {{ t('SETUP_SERVICE') }}
       </v-card-title>
@@ -110,7 +126,7 @@ const handleResult = (result) => {
             </v-stepper-item>
           </v-stepper-header>
 
-          <v-stepper-window v-for="(st, index) in steps" :key="index + 1">
+          <v-stepper-window v-for="(st, index) in steps" :key="index + 1" class="ma-0 ml-3 mt-2">
             <component
               :is="st.component"
               v-if="Boolean(st.component) && step === index + 1"
